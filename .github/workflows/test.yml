@@ -1,19 +1,21 @@
-name: 'Test'
-
-# Only run this for pull requests opened against master.
+name: test
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
-  pull_request:
-    types: [opened]
-    branches:
-    - 'master'
+  pull_request: { types: [opened, reopened, synchronize, ready_for_review] }
+  push: { branches: [ main ] }
 
 jobs:
-  test:
-    name: Running Tests
-    runs-on: ubuntu-latest
-              
-    steps:
-    - uses: actions/checkout@v2
+  unit-tests:
+     permissions:
+       contents: read
+     uses: vapor/ci/.github/workflows/run-unit-tests.yml@main
+     secrets: inherit
 
-    - name: 'Running Tests'
-      run: swift test --enable-test-discovery
+  submit-dependencies:
+    permissions:
+      contents: write
+    if: ${{ github.event_name == 'push' }}
+    uses: vapor/ci/.github/workflows/submit-deps.yml@main
+    secrets: inherit
